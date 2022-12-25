@@ -24,6 +24,7 @@ import {
   IMPL_APTOS,
   IMPL_CFX,
   IMPL_COSMOS,
+  IMPL_DOT,
   IMPL_EVM,
   IMPL_NEAR,
   IMPL_SOL,
@@ -306,6 +307,7 @@ const scopeNetwork: Record<IInjectedProviderNamesStrings, string | undefined> =
     'sui': IMPL_SUI,
     'cardano': IMPL_ADA,
     'cosmos': IMPL_COSMOS,
+    'polkadot': IMPL_DOT,
     '$hardware_sdk': undefined,
     '$private': undefined,
   };
@@ -322,6 +324,7 @@ export const ENABLED_DAPP_SCOPE: IInjectedProviderNamesStrings[] = [
   IInjectedProviderNames.sui,
   IInjectedProviderNames.cardano,
   IInjectedProviderNames.cosmos,
+  IInjectedProviderNames.polkadot,
 ];
 
 export function getNetworkImplFromDappScope(
