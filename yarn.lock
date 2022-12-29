@@ -5646,11 +5646,13 @@ __metadata:
     "@onekeyfe/network-list": 1.6.35
     "@onekeyfe/onekey-aptos-provider": 1.1.13
     "@onekeyfe/onekey-cross-webview": 1.1.13
+    "@open-wc/webpack-import-meta-loader": ^0.4.7
     "@pmmmwh/react-refresh-webpack-plugin": ^0.5.10
     "@types/chrome": ^0.0.161
     "@types/jest": ^29.2.3
     "@types/memoizee": ^0.4.8
     "@types/node": ^16.7.13
+    "@types/open-wc__webpack-import-meta-loader": ^0
     "@types/react": ^17.0.33
     "@types/react-dom": ^17.0.10
     "@types/react-test-renderer": 17
@@ -6079,6 +6081,13 @@ __metadata:
     react-native-web: 0.18.10
   languageName: unknown
   linkType: soft
+
+"@open-wc/webpack-import-meta-loader@npm:^0.4.7":
+  version: 0.4.7
+  resolution: "@open-wc/webpack-import-meta-loader@npm:0.4.7"
+  checksum: 25ba5a12eb191d11e4a21db26dabf4956aa50cc7fe42c5308eda75b2d8211937d97b5de490994108b56afca49110c53802fb008bd3efcd462c0c12bbe3b1c0dc
+  languageName: node
+  linkType: hard
 
 "@openworklabs/filecoin-address@npm:^0.0.4":
   version: 0.0.4
@@ -9104,6 +9113,13 @@ __metadata:
   version: 16.11.68
   resolution: "@types/node@npm:16.11.68"
   checksum: a35293b6b8867e10ab9e10b6cd5f0e4224a86256d5ef102581dcb9f79f35f255ad87443e8584ddf8dce1229ee28885c58187e41822cf8d1e82495e7897c47c3f
+  languageName: node
+  linkType: hard
+
+"@types/open-wc__webpack-import-meta-loader@npm:^0":
+  version: 0.4.2
+  resolution: "@types/open-wc__webpack-import-meta-loader@npm:0.4.2"
+  checksum: 13b7618a8c731bdfb832374f420212a2df60e794a1eaeb1d9bd4af39c2b5a40d99ea824754ff3fdcdf84d204cce248a1ee42afd7aaa7edfc5ffadc16bf319954
   languageName: node
   linkType: hard
 

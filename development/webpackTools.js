@@ -161,6 +161,12 @@ function normalizeConfig({
     });
   });
 
+  config.module.rules.push({
+    // https://polkadot.js.org/docs/usage/FAQ#on-webpack-4-i-have-a-parse-error-on-importmetaurl
+    test: /@polkadot/,
+    loader: require.resolve('@open-wc/webpack-import-meta-loader'),
+  });
+
   config.resolve.extensions = lodash
     .uniq(config.resolve.extensions.concat(resolveExtensions))
     .sort((a, b) => {
