@@ -5,7 +5,13 @@ const extModuleTranspile = [
   'moti',
   'popmotion',
   '@mysten/sui.js',
-  '@polkadot',
+  '@polkadot/api',
+  '@polkadot/wasm-bridge',
+  '@polkadot/types-codec',
+  '@polkadot/rpc-provider',
+  '@polkadot/types',
+  '@polkadot/util-crypto',
+  '@polkadot/keyring',
 ];
 
 module.exports = {
