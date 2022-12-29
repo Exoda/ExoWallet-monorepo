@@ -16,6 +16,7 @@ import {
 import { decrypt } from '@onekeyfe/blockchain-libs/dist/secret/encryptors/aes256';
 import { TransactionStatus } from '@onekeyfe/blockchain-libs/dist/types/provider';
 import { web3Errors } from '@onekeyfe/cross-inpage-provider-errors';
+import { HttpProvider } from '@polkadot/api';
 import BigNumber from 'bignumber.js';
 
 import bufferUitls from '@onekeyhq/shared/src/bufferUitls';
@@ -52,7 +53,7 @@ type Curve = 'secp256k1' | 'ed25519';
 
 function fromDBNetworkToChainInfo(dbNetwork: DBNetwork): ChainInfo {
   const defaultClient = IMPL_MAPPINGS[dbNetwork.impl]?.defaultClient;
-
+  const xxx = new HttpProvider('');
   let providerOptions: Record<string, any> = {};
   let { rpcURL } = dbNetwork;
   let algoIndexerURL = '';
