@@ -6,7 +6,11 @@ import store from '@onekeyhq/kit/src/store';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 function httpServerEnable() {
-  if (platformEnv.isDesktop || platformEnv.isNativeIOS) {
+  if (
+    platformEnv.isDesktop ||
+    platformEnv.isNativeIOS ||
+    platformEnv.isNativeAndroid
+  ) {
     return true;
   }
   return false;
