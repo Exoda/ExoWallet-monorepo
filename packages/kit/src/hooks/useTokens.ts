@@ -68,7 +68,7 @@ export function useAccountTokens(
     selectedFiatMoneySymbol,
   } = useAppSelector((s) => s.settings);
   const fiatMap = useAppSelector((s) => s.fiatMoney.map);
-  const fiat = fiatMap[selectedFiatMoneySymbol].value || 0;
+  const fiat = fiatMap[selectedFiatMoneySymbol]?.value || 0;
   const tokens = useAppSelector(
     (s) => s.tokens.accountTokens?.[networkId]?.[accountId] ?? [],
   );
@@ -272,4 +272,12 @@ export const useTokenPrice = ({
   const key = `${networkId}-${token?.address ?? ''}`;
   const prices = useAppSelector((s) => s.tokens.tokenPriceMap);
   return prices?.[key] ?? fallback;
+};
+
+export const useCurrentFiatValue = () => {
+  const selectedFiatMoneySymbol = useAppSelector(
+    (s) => s.settings.selectedFiatMoneySymbol,
+  );
+  const fiatMap = useAppSelector((s) => s.fiatMoney.map);
+  return fiatMap?.[selectedFiatMoneySymbol]?.value || 0;
 };

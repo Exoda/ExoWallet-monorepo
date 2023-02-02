@@ -19,6 +19,7 @@ import {
 
 import { FormatCurrencyNumber } from '../../components/Format';
 import { useAccountValues, useAppSelector, useNavigation } from '../../hooks';
+import { useCurrentFiatValue } from '../../hooks/useTokens';
 import { HomeRoutes, ModalRoutes, RootRoutes } from '../../routes/types';
 
 import { OverviewModalRoutes } from './types';
@@ -78,14 +79,14 @@ const AssetHeader: FC<IAssetHeaderProps> = ({
           />
         )}
         <Text typography={{ sm: 'DisplayLarge', md: 'Heading' }}>
-          <FormatCurrencyNumber value={0} convertValue={value} />
+          <FormatCurrencyNumber value={value} />
         </Text>
       </>
     ),
     [value, isVertical],
   );
   return (
-    <VStack>
+    <VStack bg="surface-default">
       <Pressable.Item px="6" py="4" bg="surface-subdued" onPress={onPress}>
         <VStack flex="1">
           <HStack flex="1">
@@ -121,7 +122,7 @@ const AssetHeader: FC<IAssetHeaderProps> = ({
         </VStack>
       </Pressable.Item>
       {isVertical ? null : (
-        <HStack mt="4" px="6">
+        <HStack mt="4" px="6" bg="surface-default">
           <Typography.Subheading flex="1" color="text-subdued">
             {intl.formatMessage({ id: 'form__protocols_uppercase' })}
           </Typography.Subheading>
@@ -143,19 +144,21 @@ const AssetHeader: FC<IAssetHeaderProps> = ({
 
 const OverviewDefiThumbnalWithoutMemo: FC<OverviewDefiListProps> = (props) => {
   const { networkId, address, limitSize, accountId } = props;
-
   const isVertical = useIsVerticalLayout();
   const navigation = useNavigation<NavigationProps>();
+
+  const fiat = useCurrentFiatValue();
 
   const defis = useAppSelector(
     (s) => s.overview.defi?.[`${networkId}--${address}`] ?? [],
   );
 
-  const len = useMemo(() => defis.length, [defis]);
-
   const allDefiValues = useMemo(
-    () => defis.reduce((sum, next) => sum.plus(next.protocolValue), new B(0)),
-    [defis],
+    () =>
+      defis
+        .reduce((sum, next) => sum.plus(next.protocolValue), new B(0))
+        .multipliedBy(fiat),
+    [defis, fiat],
   );
 
   const accountAllValue = useAccountValues({
@@ -170,7 +173,7 @@ const OverviewDefiThumbnalWithoutMemo: FC<OverviewDefiListProps> = (props) => {
     });
   }, [navigation, networkId, address]);
 
-  if (!len) {
+  if (!defis.length) {
     return null;
   }
 
@@ -186,7 +189,7 @@ const OverviewDefiThumbnalWithoutMemo: FC<OverviewDefiListProps> = (props) => {
         name="DeFi"
         value={allDefiValues}
         accountAllValue={accountAllValue}
-        itemLength={len}
+        itemLength={defis.length}
         onPress={handlePressHeader}
       />
       {defis.slice(0, limitSize).map((item, idx) => (

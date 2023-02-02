@@ -8,7 +8,7 @@ import {
   getCoinTypeFromNetworkId,
   parseNetworkId,
 } from '@onekeyhq/engine/src/managers/network';
-import type { INetwork, IWallet } from '@onekeyhq/engine/src/types';
+import type { IAccount, INetwork, IWallet } from '@onekeyhq/engine/src/types';
 import type { Account, DBAccount } from '@onekeyhq/engine/src/types/account';
 import type { Wallet, WalletType } from '@onekeyhq/engine/src/types/wallet';
 import { getActiveWalletAccount } from '@onekeyhq/kit/src/hooks/redux';
@@ -56,8 +56,8 @@ import { startTrace, stopTrace } from '@onekeyhq/shared/src/perf/perfTrace';
 import timelinePerfTrace, {
   ETimelinePerfNames,
 } from '@onekeyhq/shared/src/perf/timelinePerfTrace';
-import { randomAvatar } from '@onekeyhq/shared/src/utils/emojiUtils';
 import type { Avatar } from '@onekeyhq/shared/src/utils/emojiUtils';
+import { randomAvatar } from '@onekeyhq/shared/src/utils/emojiUtils';
 import type { IOneKeyDeviceFeatures } from '@onekeyhq/shared/types';
 
 import ServiceBase from './ServiceBase';
@@ -298,12 +298,14 @@ class ServiceAccount extends ServiceBase {
     avatar,
     dispatchActionDelay,
     postCreatedDelay,
+    isAutoAddAllNetworkAccounts,
   }: {
     password: string;
     mnemonic?: string;
     avatar?: Avatar;
     dispatchActionDelay?: number;
     postCreatedDelay?: number;
+    isAutoAddAllNetworkAccounts?: boolean;
   }) {
     const { dispatch, engine, appSelector, serviceAccount } =
       this.backgroundApi;
@@ -321,6 +323,7 @@ class ServiceAccount extends ServiceBase {
       mnemonic,
       avatar: avatar ?? randomAvatar(),
       autoAddAccountNetworkId: networkId,
+      isAutoAddAllNetworkAccounts,
     });
     stopTrace('engine.createHDWallet');
 
@@ -411,15 +414,15 @@ class ServiceAccount extends ServiceBase {
     skipRepeat = false,
   ) {
     const { engine } = this.backgroundApi;
-    const accounts = await engine.addHdOrHwAccounts(
+    const accounts = await engine.addHdOrHwAccounts({
       password,
       walletId,
       networkId,
-      index,
+      indexes: index,
       names,
       purpose,
       skipRepeat,
-    );
+    });
 
     if (!accounts.length) return;
 
@@ -553,12 +556,13 @@ class ServiceAccount extends ServiceBase {
         if (accountsInWalletAndNetwork.length) {
           return;
         }
-        const accounts = await engine.addHdOrHwAccounts(
+        const accounts = await engine.addHdOrHwAccounts({
           password,
-          wallet.id,
+          walletId: wallet.id,
           networkId,
-          [0],
-        );
+          indexes: [0],
+          isAddInitFirstAccountOnly: true,
+        });
         const activeAccount = accounts[0];
         await this.postAccountAdded({
           networkId,
@@ -869,11 +873,11 @@ class ServiceAccount extends ServiceBase {
     if (typeof account === 'undefined' && networkId) {
       // Network is neither btc nor evm, account is not by default created.
       try {
-        const accounts = await engine.addHdOrHwAccounts(
-          'Undefined',
-          wallet.id,
+        const accounts = await engine.addHdOrHwAccounts({
+          password: 'Undefined',
+          walletId: wallet.id,
           networkId,
-        );
+        });
         if (accounts.length > 0) {
           const $account = accounts[0];
           account = $account;
@@ -920,33 +924,106 @@ class ServiceAccount extends ServiceBase {
 
   @backgroundMethod()
   async removeWallet(walletId: string, password: string | undefined) {
-    const {
-      appSelector,
-      serviceNotification,
-      engine,
-      dispatch,
-      serviceCloudBackup,
-    } = this.backgroundApi;
-    const wallet = await engine.getWallet(walletId);
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.removeWallet,
+      title: 'ServiceAccount.removeWallet >> start',
+    });
+
+    const { appSelector, engine } = this.backgroundApi;
     const activeWalletId = appSelector((s) => s.general.activeWalletId);
+
+    const wallet = await engine.getWallet(walletId);
     const accounts = await engine.getAccounts(wallet.accounts);
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.removeWallet,
+      title: 'ServiceAccount.removeWallet >> engine.getAccounts  DONE',
+    });
+
+    await engine.removeWallet(walletId, password ?? '');
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.removeWallet,
+      title: 'ServiceAccount.removeWallet >> engine.removeWallet  DONE',
+    });
+
+    setTimeout(
+      () =>
+        this.postWalletRemoved({
+          accounts,
+          activeWalletId,
+          removedWalletId: walletId,
+        }),
+      600,
+    );
+
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.removeWallet,
+      title: 'ServiceAccount.removeWallet >> end',
+    });
+  }
+
+  async postWalletRemoved({
+    accounts,
+    activeWalletId,
+    removedWalletId,
+  }: {
+    accounts: IAccount[];
+    activeWalletId: string | undefined | null;
+    removedWalletId: string;
+  }) {
+    const { serviceNotification, dispatch, serviceCloudBackup } =
+      this.backgroundApi;
+
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.postWalletRemoved,
+      title: 'ServiceAccount.postWalletRemoved >> start =================== ',
+    });
+
+    if (activeWalletId && activeWalletId === removedWalletId) {
+      // autoChangeWallet if remove current wallet
+      // **** multiple dispatch cause UI reload performance issue
+      await this.autoChangeWallet();
+      timelinePerfTrace.mark({
+        name: ETimelinePerfNames.postWalletRemoved,
+        title: 'ServiceAccount.postWalletRemoved >> autoChangeWallet DONE',
+      });
+    } else {
+      // **** multiple dispatch cause UI reload performance issue
+      await this.initWallets();
+      timelinePerfTrace.mark({
+        name: ETimelinePerfNames.postWalletRemoved,
+        title: 'ServiceAccount.postWalletRemoved >> initWallets DONE',
+      });
+    }
+
     serviceNotification.removeAccountDynamicBatch({
       addressList: accounts
         .filter((a) => a.coinType === COINTYPE_ETH)
         .map((a) => a.address),
     });
-    await engine.removeWallet(walletId, password ?? '');
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.postWalletRemoved,
+      title:
+        'ServiceAccount.postWalletRemoved >> removeAccountDynamicBatch DONE',
+    });
 
-    if (activeWalletId === walletId) {
-      await this.autoChangeWallet();
-    } else {
-      await this.initWallets();
-    }
-
-    dispatch(setRefreshTS());
-    if (!walletId.startsWith('hw')) {
+    if (!removedWalletId.startsWith('hw')) {
+      // **** multiple dispatch cause UI reload performance issue
       serviceCloudBackup.requestBackup();
     }
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.postWalletRemoved,
+      title: 'ServiceAccount.postWalletRemoved >> requestBackup DONE',
+    });
+
+    // **** multiple dispatch cause UI reload performance issue
+    dispatch(setRefreshTS());
+
+    await wait(10);
+    timelinePerfTrace.mark({
+      name: ETimelinePerfNames.postWalletRemoved,
+      title: 'ServiceAccount.postWalletRemoved >> end',
+    });
+    return null;
   }
 
   @backgroundMethod()
